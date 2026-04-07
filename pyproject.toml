@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "api-crud-generate-libary"
 version = "1.0.2"
 description = "A libary created to Simplify your routine generating a Full CRUD API based on database models and schemas"
