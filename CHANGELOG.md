@@ -1,4 +1,8 @@
-﻿## v1.0.1
+﻿## v1.0.2
+
+- Changed pyproject name format
+
+## v1.0.1
 
 - Changed pyproject.toml name
 - Changed main folder name
@@ -8,6 +12,7 @@
 - Added all the files to generate a basic CRUD
 - Added a basic documentation for the README.md file
 - Created the development setup using poetry
+
 
 
 
