@@ -1,7 +1,7 @@
-"""Sencondary level joins helper functions file"""
+from typing import Any
 from sqlalchemy.orm import joinedload
 
-def build_joinedload_chain(path_list):
+def build_joinedload_chain(path_list: list[str]) -> Any:
     """
     Takes a list of relationship attribute names
     and chains them using joinedload().
@@ -14,7 +14,7 @@ def build_joinedload_chain(path_list):
         sqlalchemy.orm.Load: A chained joinedload
         object for use in SQLAlchemy queries.
     """
-    loader = joinedload(path_list[0])
+    loader = joinedload(path_list[0])  # type: ignore
     for attr in path_list[1:]:
-        loader = loader.joinedload(attr)
-    return loader
+        loader = loader.joinedload(attr)  # type: ignore
+    return loader  # type: ignore

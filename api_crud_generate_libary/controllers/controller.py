@@ -1,10 +1,10 @@
 """Generic SQL controller for CRUD operations file."""
-from typing import Optional
+from typing import Optional, Any
 from pydantic import ValidationError
 from fastapi import HTTPException
 
-from src.services.service import Service
-from src.schemas.pattern_schema import PatternGetSchema
+from api_crud_generate_libary.services.service import Service
+from api_crud_generate_libary.schemas.pattern_schema import PatternGetSchema
 
 class Controller:
     """
@@ -15,10 +15,10 @@ class Controller:
 
     def __init__(
             self,
-            model_class,
-            standard_schema,
-            request_post_schema,
-            request_patch_schema
+            model_class: Any,
+            standard_schema: Any,
+            request_post_schema: Any,
+            request_patch_schema: Any
         ):
         self.model_class = model_class
         self.standard_schema = standard_schema
@@ -28,14 +28,14 @@ class Controller:
 
     async def get(
         self,
-        db,
-        join_parameters: Optional[list] = None,
-        second_level_join_parameters: Optional[list] = None,
+        db: Any,
+        join_parameters: Optional[list[Any]] = None,
+        second_level_join_parameters: Optional[list[Any]] = None,
         page: Optional[int] = None,
         items_per_page: Optional[int] = None,
         order_by: Optional[list[str]] = None,
         direction: Optional[list[str]] = None
-    ):
+    ) -> Any:
         """Get all items from the database."""
 
         if (
@@ -72,11 +72,11 @@ class Controller:
 
     async def get_by_id(
         self,
-        req_id,
-        db,
-        join_parameters: Optional[list] = None,
-        second_level_join_parameters: Optional[list] = None
-    ):
+        req_id: str,
+        db: Any,
+        join_parameters: Optional[list[Any]] = None,
+        second_level_join_parameters: Optional[list[Any]] = None
+    ) -> dict[str, Any]:
         """Get a single item by ID from the database."""
 
         response = await self.service.read_one(
@@ -91,31 +91,19 @@ class Controller:
 
     async def create(
         self,
-        body,
-        db,
-        join_parameters,
-        second_level_join_parameters
-    ):
+        body: Any,
+        db: Any,
+        join_parameters: Any,
+        second_level_join_parameters: Any
+    ) -> dict[str, Any]:
         """Create a new item in the database."""
         try:
             if self.request_post_schema:
-                if isinstance(body, list):
-                    validated_body = [
-                        self.request_post_schema.model_validate(item)
-                        for item in body
-                    ]
-                else:
-                    validated_body = self.request_post_schema.model_validate(
-                        body
-                    )
+                validated_body = self.request_post_schema.model_validate(  # type: ignore
+                    body
+                )
             else:
-                if isinstance(body, list):
-                    validated_body = [
-                        self.standard_schema.model_validate(item)
-                        for item in body
-                    ]
-                else:
-                    validated_body = self.standard_schema.model_validate(body)
+                validated_body = self.standard_schema.model_validate(body)  # type: ignore
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors()) from e
 
@@ -131,9 +119,9 @@ class Controller:
 
     async def delete(
         self,
-        req_id,
-        db
-    ):
+        req_id: str,
+        db: Any
+    ) -> str:
         """Delete an item by ID from the database."""
 
         response = await self.service.delete(req_id, db)
@@ -141,12 +129,12 @@ class Controller:
 
     async def update(
         self,
-        req_id,
-        body,
-        db,
-        join_parameters,
-        second_level_join_parameters
-    ):
+        req_id: str,
+        body: Any,
+        db: Any,
+        join_parameters: Any,
+        second_level_join_parameters: Any
+    ) -> dict[str, Any]:
         """Update an existing item in the database."""
         try:
             if self.request_patch_schema:

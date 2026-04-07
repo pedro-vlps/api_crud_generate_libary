@@ -15,3 +15,7 @@ class PatternSchemaDataList(BaseModel, Generic[T]):
 class PatternSchema(BaseModel, Generic[T]):
     """Generic schema for API responses."""
     data: T
+
+class PatternGetSchema(BaseModel, Generic[T]):
+    """Schema for GET requests with pagination and optional total count."""
+    data: list[T]

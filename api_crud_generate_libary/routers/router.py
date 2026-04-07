@@ -1,9 +1,9 @@
 """Generic Router file for API endpoints."""
-from typing import Generic, TypeVar, Type, AsyncGenerator, Optional, Callable, Union
+from typing import Generic, TypeVar, Type, AsyncGenerator, Optional, Callable, Union, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Body, Query
-from src.controllers.controller import Controller
-from src.schemas.pattern_schema import PatternSchema, PatternGetSchema, PatternSchemaDataList
+from api_crud_generate_libary.controllers.controller import Controller
+from api_crud_generate_libary.schemas.pattern_schema import PatternSchema, PatternGetSchema, PatternSchemaDataList
 
 # Type variables for generic types.
 S = TypeVar("S")
@@ -41,9 +41,9 @@ class SqlRouter(Generic[S, M]):
             use_post: Optional[bool] = True,
             use_delete: Optional[bool] = True,
             use_patch: Optional[bool] = True,
-            auth_callback: Optional[Callable] = None,
-            join_parameters: Optional[list] = None,
-            second_level_join_parameters: Optional[list] = None,
+            auth_callback: Optional[Callable[..., Any]] = None,
+            join_parameters: Optional[list[Any]] = None,
+            second_level_join_parameters: Optional[list[Any]] = None,
         ):
         self.standard_schema = standard_schema
         self.model_class = model_class
@@ -83,7 +83,7 @@ class SqlRouter(Generic[S, M]):
         if use_patch:
             self.patch_route()
 
-    def get_schema_example(self, schema=None) -> dict:
+    def get_schema_example(self, schema: Optional[Any] = None) -> dict[str, Any]:
         """Extract a schema example from model_config"""
         item = getattr(
             schema,
@@ -112,8 +112,8 @@ class SqlRouter(Generic[S, M]):
             items_per_page: Optional[int] = Query(None, gt=0),
             order_by: Optional[list[str]] = Query(None),
             direction: Optional[list[str]] = Query(None)
-        ):
-            response = await self.controller.get(
+        ) -> Any:
+            response: Any = await self.controller.get(  # type: ignore
                 db,
                 self.join_parameters,
                 self.second_level_join_parameters,
@@ -148,10 +148,10 @@ class SqlRouter(Generic[S, M]):
         schema = self.response_get_by_id_schema or self.standard_schema
 
         async def get_by_id(
-            id_,
+            id_: str,
             db: AsyncSession = Depends(self.db_session)
-        ):
-            response = await self.controller.get_by_id(
+        ) -> Any:
+            response: Any = await self.controller.get_by_id(  # type: ignore
                 id_,
                 db,
                 self.join_parameters,
@@ -183,10 +183,10 @@ class SqlRouter(Generic[S, M]):
         response_schema = self.response_post_schema or self.standard_schema
 
         async def post(
-            body: Union[dict, list] = Body(...),
+            body: Union[dict[str, Any], list[Any]] = Body(...),
             db: AsyncSession = Depends(self.db_session)
-        ):
-            response = await self.controller.create(
+        ) -> Any:
+            response: Any = await self.controller.create(  # type: ignore
                 body,
                 db,
                 self.join_parameters,
@@ -230,10 +230,10 @@ class SqlRouter(Generic[S, M]):
         """
 
         async def delete(
-            id_,
+            id_: str,
             db: AsyncSession = Depends(self.db_session)
-        ):
-            response = await self.controller.delete(id_, db)
+        ) -> Any:
+            response: Any = await self.controller.delete(id_, db)  # type: ignore
             return response
 
         self.router.add_api_route(
@@ -261,11 +261,11 @@ class SqlRouter(Generic[S, M]):
         response_schema = self.response_patch_schema or self.standard_schema # pylint: disable=line-too-long
 
         async def patch(
-            id_,
+            id_: str,
             body: S = Body(...),
             db: AsyncSession = Depends(self.db_session)
-        ):
-            response = await self.controller.update(
+        ) -> Any:
+            response: Any = await self.controller.update(  # type: ignore
                 id_,
                 body,
                 db,

@@ -1,31 +1,31 @@
 """Generic SQL service for CRUD operations file."""
 from uuid import UUID
-from typing import Generic, TypeVar, Type
+from typing import Generic, TypeVar, Type, Any, Optional
 from fastapi import HTTPException
 from sqlalchemy import select, delete, func, or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError, DBAPIError
-from asyncpg.exceptions import UniqueViolationError, StringDataRightTruncationError
+from asyncpg.exceptions import UniqueViolationError, StringDataRightTruncationError  # type: ignore
 
-from src.helpers.join_load_builder import build_joinedload_chain
+from api_crud_generate_libary.helpers.join_load_builder import build_joinedload_chain  # type: ignore
 
 M = TypeVar("M")
 
-class SqlService(Generic[M]):
+class Service(Generic[M]):
     """Generic service for SQL operations."""
     def __init__(self, table_model: Type[M]):
         self.table_model = table_model
 
     async def read(
         self,
-        db,
-        join_parameters,
-        second_level_join_parameters,
-        page,
-        items_per_page,
-        order_by,
-        direction
-    ):
+        db: Any,
+        join_parameters: Optional[list[dict[str, Any]]],
+        second_level_join_parameters: Optional[list[dict[str, Any]]],
+        page: Optional[int],
+        items_per_page: Optional[int],
+        order_by: Optional[list[str]],
+        direction: Optional[list[str]]
+    ) -> Any:
         """Set the query and crete the session to read all items"""
 
         async with db as session:
@@ -70,7 +70,7 @@ class SqlService(Generic[M]):
 
                     query = query.where(
                         or_(
-                            *query_parameters
+                            *query_parameters  # type: ignore
                         )
                     )
 
@@ -133,11 +133,11 @@ class SqlService(Generic[M]):
 
     async def read_one(
         self,
-        req_id,
-        db,
-        join_parameters,
-        second_level_join_parameters
-    ):
+        req_id: str,
+        db: Any,
+        join_parameters: Optional[list[dict[str, Any]]],
+        second_level_join_parameters: Optional[list[dict[str, Any]]]
+    ) -> Any:
         """
             Set the query, check the UUID sent
             and crete the session to read one item by ID
@@ -188,7 +188,7 @@ class SqlService(Generic[M]):
                         loads
                     )
 
-            query = query.where(self.table_model.id == uuid_id)
+            query = query.where(self.table_model.id == uuid_id)  # type: ignore
 
             result = await session.execute(query)
             data = result.scalars().first()
@@ -203,62 +203,34 @@ class SqlService(Generic[M]):
 
     async def create(
         self,
-        body,
-        db,
-        join_parameters=None,
-        second_level_join_parameters=None
-    ):
+        body: Any,
+        db: Any,
+        join_parameters: Optional[list[dict[str, Any]]] = None,
+        second_level_join_parameters: Optional[list[dict[str, Any]]] = None
+    ) -> Any:
         """
             Check the request body, create the session,
             Create a new item in the database and validate
             the database response.
         """
         try:
-            if isinstance(body, list):
-                new_items = []
-                for item in body:
-                    if hasattr(item, "dict"):
-                        item = item.dict()
+            if hasattr(body, "dict"):
+                body = body.dict()
 
-                    new_item = self.table_model(**item)
-                    new_items.append(new_item)
-                    db.add(new_item)
+            new_item = self.table_model(**body)
 
-                await db.commit()
-                if join_parameters is None:
-                    return new_items
-                else:
-                    new_items_with_joins = []
+            db.add(new_item)
+            await db.commit()
 
-                    for item in new_items:
-                        item_with_joins = await self.read_one(
-                            str(item.id),
-                            db,
-                            join_parameters,
-                            second_level_join_parameters
-                        )
-                        new_items_with_joins.append(item_with_joins)
-
-                    return new_items_with_joins
-
+            if join_parameters is None:
+                return new_item
             else:
-                if hasattr(body, "dict"):
-                    body = body.dict()
-
-                new_item = self.table_model(**body)
-
-                db.add(new_item)
-                await db.commit()
-
-                if join_parameters is None:
-                    return new_item
-                else:
-                    return await self.read_one(
-                        str(new_item.id),
-                        db,
-                        join_parameters,
-                        second_level_join_parameters
-                    )
+                return await self.read_one(
+                    str(new_item.id),  # type: ignore
+                    db,
+                    join_parameters,
+                    second_level_join_parameters
+                )
 
         except IntegrityError as e:
             await db.rollback()
@@ -287,7 +259,7 @@ class SqlService(Generic[M]):
                 )
             ) from e
 
-    async def delete(self, req_id, db):
+    async def delete(self, req_id: str, db: Any) -> str:
         """
             Check the UUID sent, Delete an item by ID from
             database and validate the database response.
@@ -303,7 +275,7 @@ class SqlService(Generic[M]):
 
             query = delete(
                 self.table_model
-            ).where(self.table_model.id == uuid_obj)
+            ).where(self.table_model.id == uuid_obj)  # type: ignore
 
             try:
                 result = await session.execute(query)
@@ -328,12 +300,12 @@ class SqlService(Generic[M]):
 
     async def update(
         self,
-        req_id,
-        body,
-        db,
-        join_parameters=None,
-        second_level_join_parameters=None
-    ):
+        req_id: str,
+        body: dict[str, Any],
+        db: Any,
+        join_parameters: Optional[list[dict[str, Any]]] = None,
+        second_level_join_parameters: Optional[list[dict[str, Any]]] = None
+    ) -> Any:
         """
             Check the request body, check the UUID sent,
             Update an existing item in the database and
@@ -350,7 +322,7 @@ class SqlService(Generic[M]):
         async with db as session:
             query = select(
                 self.table_model
-            ).where(self.table_model.id == uuid_id)
+            ).where(self.table_model.id == uuid_id)  # type: ignore
             result = await session.execute(query)
             data = result.scalars().first()
 
