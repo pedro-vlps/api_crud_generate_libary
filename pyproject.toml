@@ -1,6 +1,6 @@
-[project]
+﻿[project]
 name = "api_crud_generate_libary"
-version = "1.0.0"
+version = "1.0.1"
 description = "A libary created to Simplify your routine generating a Full CRUD API based on database models and schemas"
 authors = [
     {name = "Pedro Vieira",email = "pedro515vieira@gmail.com"}
