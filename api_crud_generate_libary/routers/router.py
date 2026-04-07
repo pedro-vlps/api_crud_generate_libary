@@ -240,7 +240,6 @@ class SqlRouter(Generic[S, M]):
             "/{id_}",
             delete,
             methods=["DELETE"],
-            status_code=204,
             dependencies=[
                 Depends(self.auth_callback)
             ] if self.auth_callback else []
