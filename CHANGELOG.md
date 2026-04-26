@@ -1,4 +1,8 @@
-﻿## v1.0.5
+﻿## v1.1.0
+
+- Added a option to send multiple dependencies to auth_callback parameter
+
+## v1.0.5
 
 - Removed status_code from delete route (It should not be here)
 
@@ -25,6 +29,7 @@
 - Added all the files to generate a basic CRUD
 - Added a basic documentation for the README.md file
 - Created the development setup using poetry
+
 
 
 
