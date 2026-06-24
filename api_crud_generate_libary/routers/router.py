@@ -142,7 +142,7 @@ class Router(Generic[S, M]):
         self.router.add_api_route(
             "",
             get,
-            response_model=PatternGetSchema[schema],
+            response_model=PatternSchemaDataList[schema],
             response_model_exclude_unset=True,
             methods=["GET"],
             dependencies=(
