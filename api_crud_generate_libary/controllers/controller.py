@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from fastapi import HTTPException
 
 from api_crud_generate_libary.services.service import Service
-from api_crud_generate_libary.schemas.pattern_schema import PatternGetSchema
+from api_crud_generate_libary.schemas.pattern_schema import PatternSchemaDataList
 
 class Controller:
     """
@@ -68,7 +68,7 @@ class Controller:
                 "has_more": response[1] > (page * items_per_page)
             })
 
-        return PatternGetSchema(**payload)
+        return PatternSchemaDataList(**payload)
 
     async def get_by_id(
         self,
