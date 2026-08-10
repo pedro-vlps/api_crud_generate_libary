@@ -1,4 +1,8 @@
-﻿## v1.1.0
+﻿## v1.1.1
+
+- Removed PatternGetSchema mentions and declaration (Deprecated)
+
+## v1.1.0
 
 - Added a option to send multiple dependencies to auth_callback parameter
 
@@ -29,6 +33,7 @@
 - Added all the files to generate a basic CRUD
 - Added a basic documentation for the README.md file
 - Created the development setup using poetry
+
 
 
 
