@@ -15,7 +15,6 @@ from fastapi import APIRouter, Depends, Body, Query
 from api_crud_generate_libary.controllers.controller import Controller
 from api_crud_generate_libary.schemas.pattern_schema import (
     PatternSchema,
-    PatternGetSchema,
     PatternSchemaDataList,
 )
 
