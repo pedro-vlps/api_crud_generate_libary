@@ -1132,6 +1132,10 @@ Wheel and source distributions include the MIT license. Before a public
 release, verify package-name availability and test installation in a fresh
 environment and through TestPyPI. Building does not publish anything.
 
+Maintainers: follow the [publishing guide](https://github.com/pedro-vlps/api_crud_generate_libary/blob/main/docs/PUBLISHING.md)
+to configure trusted publishers, approve a release tag, test TestPyPI and
+manually publish to PyPI using the `Publish package` GitHub Actions workflow.
+
 Commits require approval under `AGENTS.md`; pushing and publication require
 separate authorization.
 

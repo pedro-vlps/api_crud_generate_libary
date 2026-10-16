@@ -4,6 +4,11 @@ on:
   push:
     branches: [develop, main]
   pull_request:
+  workflow_call:
+    inputs:
+      source_ref:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -33,6 +38,8 @@ jobs:
       TEST_DATABASE_URL: postgresql+asyncpg://crud_test:local_test_password@localhost:5432/crud_tests
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
@@ -44,3 +51,15 @@ jobs:
       - run: poetry run pytest -q
       - run: poetry build
       - run: poetry run twine check dist/*
+      - name: Verify wheel installation outside the source tree
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-smoke"
+          "$RUNNER_TEMP/wheel-smoke/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wheel-smoke/bin/python" -m pip check
+          "$RUNNER_TEMP/wheel-smoke/bin/python" -c "from api_crud_generate_libary import Router; print(Router)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions-python-${{ matrix.python }}
+          path: dist/*
+          if-no-files-found: error
