@@ -1,9 +1,10 @@
-"""Schema File for Returning Messages"""
-from pydantic import BaseModel
+"""Response contract for an explicitly configured DELETE message."""
+
+from pydantic import BaseModel, ConfigDict
 
 
 class MessageSchema(BaseModel):
-    message: str
+    """Wrap a successful operation's message."""
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+    message: str

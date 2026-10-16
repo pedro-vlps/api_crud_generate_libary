@@ -1,20 +1,20 @@
-from typing import Any
-from sqlalchemy.orm import joinedload
+"""Compose eager loading for SQLAlchemy relationship attributes."""
 
-def build_joinedload_chain(path_list: list[str]) -> Any:
-    """
-    Takes a list of relationship attribute names
-    and chains them using joinedload().
+from collections.abc import Sequence
 
-    Args:
-        path_list (list): A list of strings representing
-        the names of relationships to be eagerly loaded.
+from sqlalchemy.orm import InstrumentedAttribute, Load, joinedload
 
-    Returns:
-        sqlalchemy.orm.Load: A chained joinedload
-        object for use in SQLAlchemy queries.
-    """
-    loader = joinedload(path_list[0])  # type: ignore
-    for attr in path_list[1:]:
-        loader = loader.joinedload(attr)  # type: ignore
-    return loader  # type: ignore
+
+def build_joinedload_chain(path_list: Sequence[InstrumentedAttribute]) -> Load:
+    """Chain mapped relationships; strings and empty paths are invalid."""
+    if not path_list:
+        raise ValueError("A relationship path cannot be empty.")
+    if any(
+        not isinstance(attribute, InstrumentedAttribute)
+        for attribute in path_list
+    ):
+        raise ValueError("Relationship paths must contain mapped attributes.")
+    loader = joinedload(path_list[0])
+    for attribute in path_list[1:]:
+        loader = loader.joinedload(attribute)
+    return loader

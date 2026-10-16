@@ -1,158 +1,149 @@
-"""Generic SQL controller for CRUD operations file."""
-from typing import Optional, Any
-from pydantic import ValidationError
-from fastapi import HTTPException
+"""Adapt CRUD request schemas and persistence results for HTTP routes."""
 
+from typing import Any
+
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel, ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from api_crud_generate_libary.controllers.http_errors import execute_http
+from api_crud_generate_libary.queries.read_query import (
+    JoinParameters,
+    SecondLevelJoinParameters,
+)
+from api_crud_generate_libary.schemas.partial_schema import (
+    create_partial_schema,
+)
+from api_crud_generate_libary.schemas.pattern_schema import (
+    PatternSchemaDataList,
+)
 from api_crud_generate_libary.services.service import Service
-from api_crud_generate_libary.schemas.pattern_schema import PatternSchemaDataList
+
 
 class Controller:
-    """
-        Controller for handling SQL operations.
-        Provides methods for CRUD operations using 
-        and setting up all parameters fot Service.
-    """
+    """Validate request contracts and delegate record operations."""
 
     def __init__(
-            self,
-            model_class: Any,
-            standard_schema: Any,
-            request_post_schema: Any,
-            request_patch_schema: Any
-        ):
-        self.model_class = model_class
-        self.standard_schema = standard_schema
+        self,
+        model_class: type,
+        standard_schema: type[BaseModel],
+        request_post_schema: type[BaseModel] | None = None,
+        request_patch_schema: type[BaseModel] | None = None,
+    ):
         self.service = Service(model_class)
-        self.request_post_schema = request_post_schema
-        self.request_patch_schema = request_patch_schema
+        self.request_post_schema = request_post_schema or standard_schema
+        self.request_patch_schema = (
+            request_patch_schema or create_partial_schema(standard_schema)
+        )
 
     async def get(
         self,
-        db: Any,
-        join_parameters: Optional[list[Any]] = None,
-        second_level_join_parameters: Optional[list[Any]] = None,
-        page: Optional[int] = None,
-        items_per_page: Optional[int] = None,
-        order_by: Optional[list[str]] = None,
-        direction: Optional[list[str]] = None
-    ) -> Any:
-        """Get all items from the database."""
-
-        if (
-            page is None and items_per_page is not None
-        ) | (
-            page is not None and items_per_page is None
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid pagination values"
+        db: AsyncSession,
+        join_parameters: list[JoinParameters] | None = None,
+        second_level_join_parameters: (
+            list[SecondLevelJoinParameters] | None
+        ) = None,
+        page: int | None = None,
+        items_per_page: int | None = None,
+        order_by: list[str] | None = None,
+        direction: list[str] | None = None,
+    ) -> PatternSchemaDataList:
+        """Return a listing with metadata only when pagination is requested."""
+        data, count = await execute_http(
+            self.service.read(
+                db,
+                join_parameters,
+                second_level_join_parameters,
+                page,
+                items_per_page,
+                order_by,
+                direction,
             )
-
-        response = await self.service.read(
-            db,
-            join_parameters,
-            second_level_join_parameters,
-            page,
-            items_per_page,
-            order_by,
-            direction
         )
-
-        payload = {
-            "data": response[0]
-        }
-
+        payload = {"data": data}
         if page is not None and items_per_page is not None:
-            payload.update({
-                "total_count": response[1],
-                "has_more": response[1] > (page * items_per_page)
-            })
-
+            payload.update(
+                total_count=count, has_more=count > page * items_per_page
+            )
         return PatternSchemaDataList(**payload)
 
     async def get_by_id(
         self,
         req_id: str,
-        db: Any,
-        join_parameters: Optional[list[Any]] = None,
-        second_level_join_parameters: Optional[list[Any]] = None
+        db: AsyncSession,
+        join_parameters: list[JoinParameters] | None = None,
+        second_level_join_parameters: (
+            list[SecondLevelJoinParameters] | None
+        ) = None,
     ) -> dict[str, Any]:
-        """Get a single item by ID from the database."""
-
-        response = await self.service.read_one(
-            req_id,
-            db,
-            join_parameters,
-            second_level_join_parameters
+        """Return a record in the standard response envelope."""
+        data = await execute_http(
+            self.service.read_one(
+                req_id,
+                db,
+                join_parameters,
+                second_level_join_parameters,
+            )
         )
-        return {
-            "data": response,
-        }
+        return {"data": data}
 
     async def create(
         self,
         body: Any,
-        db: Any,
-        join_parameters: Any,
-        second_level_join_parameters: Any
+        db: AsyncSession,
+        join_parameters: list[JoinParameters] | None = None,
+        second_level_join_parameters: (
+            list[SecondLevelJoinParameters] | None
+        ) = None,
     ) -> dict[str, Any]:
-        """Create a new item in the database."""
+        """Validate a single input object before persisting it."""
         try:
-            if self.request_post_schema:
-                validated_body = self.request_post_schema.model_validate(  # type: ignore
-                    body
-                )
-            else:
-                validated_body = self.standard_schema.model_validate(body)  # type: ignore
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors()) from e
-
-        response = await self.service.create(
-            validated_body,
-            db,
-            join_parameters,
-            second_level_join_parameters
+            validated = self.request_post_schema.model_validate(body)
+        except ValidationError as error:
+            raise HTTPException(
+                status_code=422,
+                detail=jsonable_encoder(error.errors()),
+            ) from error
+        data = await execute_http(
+            self.service.create(
+                validated,
+                db,
+                join_parameters,
+                second_level_join_parameters,
+            )
         )
-        return {
-            "data": response,
-        }
-
-    async def delete(
-        self,
-        req_id: str,
-        db: Any
-    ) -> str:
-        """Delete an item by ID from the database."""
-
-        response = await self.service.delete(req_id, db)
-        return response
+        return {"data": data}
 
     async def update(
         self,
         req_id: str,
         body: Any,
-        db: Any,
-        join_parameters: Any,
-        second_level_join_parameters: Any
+        db: AsyncSession,
+        join_parameters: list[JoinParameters] | None = None,
+        second_level_join_parameters: (
+            list[SecondLevelJoinParameters] | None
+        ) = None,
     ) -> dict[str, Any]:
-        """Update an existing item in the database."""
+        """Preserve omitted PATCH fields and validate explicit values."""
         try:
-            if self.request_patch_schema:
-                validated_body = self.request_patch_schema.model_validate(body)
-            else:
-                validated_body = self.standard_schema.model_validate(body)
-
-            validated_body = validated_body.model_dump(exclude_unset=True)
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors()) from e
-
-        response = await self.service.update(
-            req_id,
-            validated_body,
-            db,
-            join_parameters,
-            second_level_join_parameters
+            validated = self.request_patch_schema.model_validate(body)
+        except ValidationError as error:
+            raise HTTPException(
+                status_code=422,
+                detail=jsonable_encoder(error.errors()),
+            ) from error
+        data = await execute_http(
+            self.service.update(
+                req_id,
+                validated.model_dump(exclude_unset=True),
+                db,
+                join_parameters,
+                second_level_join_parameters,
+            )
         )
-        return {
-            "data": response,
-        }
+        return {"data": data}
+
+    async def delete(self, req_id: str, db: AsyncSession) -> str:
+        """Delete a record, translating expected failures into HTTP errors."""
+        return await execute_http(self.service.delete(req_id, db))

@@ -1,4 +1,21 @@
-﻿## v1.1.1
+# Changelog
+
+## v1.2.0 - 2026-10-16
+
+- Adopt the MIT license and include it in package metadata and distributions.
+- Document PyPI and source installation, database setup, schemas and CRUD integration.
+- Fix PostgreSQL async dependencies and synchronize the development lockfile.
+- Reload committed records and preserve caller-owned session lifetimes.
+- Generate partial PATCH contracts and publish concrete OpenAPI request schemas.
+- Accept only one object per POST request and reject arrays.
+- Apply optional DELETE message schemas while preserving the default response.
+- Support UUID, integer and string primary keys with mapped attribute names.
+- Correct relationship loading, pagination, sorting validation and database errors.
+- Add public package exports, an executable PostgreSQL example and regression tests.
+- Add CI checks and adopt the project development instructions.
+- Replace the obsolete automatic commit script with the documented approval workflow.
+
+## v1.1.1
 
 - Removed PatternGetSchema mentions and declaration (Deprecated)
 

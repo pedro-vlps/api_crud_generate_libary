@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.13", "3.14"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: crud_tests
+          POSTGRES_USER: crud_test
+          POSTGRES_PASSWORD: local_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crud_test -d crud_tests"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://crud_test:local_test_password@localhost:5432/crud_tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install poetry==2.3.3
+      - run: poetry check --strict
+      - run: poetry install --with dev
+      - run: poetry run black --check api_crud_generate_libary tests examples
+      - run: poetry run pylint api_crud_generate_libary tests examples
+      - run: poetry run pytest -q
+      - run: poetry build
+      - run: poetry run twine check dist/*

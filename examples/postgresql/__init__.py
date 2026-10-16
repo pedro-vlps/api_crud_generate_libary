@@ -1,0 +1,1 @@
+"""Minimal PostgreSQL CRUD application."""

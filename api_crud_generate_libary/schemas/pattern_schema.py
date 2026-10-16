@@ -1,17 +1,21 @@
-"""Standard file for application schemas setup"""
-from typing import Generic, TypeVar, Optional
-from pydantic import BaseModel
-# from pydantic.generics import GenericModel
+"""Stable response envelopes for individual records and listings."""
 
-# Generic type to dynamically replace
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel
+
 T = TypeVar("T")
 
+
 class PatternSchemaDataList(BaseModel, Generic[T]):
-    """Schema for GET requests with pagination and optional total count."""
+    """Wrap records, with optional pagination metadata."""
+
     data: list[T]
-    total_count: Optional[int] = None
-    has_more: Optional[bool] = None
+    total_count: int | None = None
+    has_more: bool | None = None
+
 
 class PatternSchema(BaseModel, Generic[T]):
-    """Generic schema for API responses."""
+    """Wrap a single record."""
+
     data: T
